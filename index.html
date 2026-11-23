@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Caudal — Prototipo (proyecto académico UPTC)</title>
+<style>
+:root{
+  --navy:#0E2A47; --navy2:#1A4067; --green:#17694F; --green-soft:#E2F1EA;
+  --amber:#F4A23A; --amber-soft:#FDEFD8;
+  --bg:#EEF3F1; --card:#FFFFFF; --text:#0E2A47; --muted:#4F6172; --line:#D9E2DE; --chip:#EAF0EE;
+  --accent-text:#17694F; --danger:#B3261E; --danger-soft:#FBE9E7;
+  --c-ss:#2F5D8A; --c-tax:#F4A23A; --c-fund:#8CC5AF; --c-free:#17694F; --c-ret:#B9C4CC;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#08172A; --card:#11283F; --text:#EAF1F6; --muted:#A9BAC9; --line:#23415E; --chip:#183350;
+    --accent-text:#6CD3AA; --danger:#FF8A80; --danger-soft:#3A1F22; --green-soft:#12362F; --amber-soft:#3A2C14;
+    --c-ret:#5B6E80; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#08172A; --card:#11283F; --text:#EAF1F6; --muted:#A9BAC9; --line:#23415E; --chip:#183350;
+  --accent-text:#6CD3AA; --danger:#FF8A80; --danger-soft:#3A1F22; --green-soft:#12362F; --amber-soft:#3A2C14;
+  --c-ret:#5B6E80; color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Carlito","Calibri","Segoe UI",system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.35;-webkit-font-smoothing:antialiased}
+.app{max-width:480px;margin:0 auto;min-height:100%;padding:0 0 88px;position:relative;background:var(--bg)}
+header.top{position:sticky;top:0;z-index:5;padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:22px;letter-spacing:.2px}
+.pill{font-size:12px;background:var(--amber);color:var(--navy);padding:3px 9px;border-radius:999px;font-weight:700}
+main{padding:14px 14px 0}
+h1,h2,h3{margin:0}
+h2{font-size:18px;margin:18px 2px 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.hero{background:var(--navy);color:#fff;border:none}
+.hero .lbl{font-size:14px;opacity:.85}
+.hero .big{font-size:40px;font-weight:700;line-height:1.1;margin:4px 0 6px;color:#fff}
+.hero .big small{font-size:16px;font-weight:400;opacity:.8}
+.hero p{margin:0;font-size:14px;opacity:.88}
+.muted{color:var(--muted)}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.kpi{font-size:26px;font-weight:700}
+.stack{display:flex;height:22px;border-radius:11px;overflow:hidden;background:var(--chip);margin:10px 0 12px}
+.stack span{display:block;height:100%}
+.legend{display:grid;grid-template-columns:1fr;gap:8px}
+.legend .it{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px}
+.legend .it b{font-variant-numeric:tabular-nums}
+.dot{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:8px;vertical-align:-1px}
+.bar{height:10px;border-radius:5px;background:var(--chip);overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--c-free);border-radius:5px}
+.note{font-size:13px;color:var(--muted);margin:6px 2px 0}
+.alert{border-radius:12px;padding:12px 14px;font-size:15px;margin-bottom:12px}
+.alert.warn{background:var(--danger-soft);color:var(--danger);border:1px solid var(--danger)}
+.alert.ok{background:var(--green-soft);color:var(--accent-text);border:1px solid var(--accent-text)}
+label{display:block;font-size:14px;font-weight:700;margin:10px 0 4px}
+input,select{width:100%;font:inherit;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);min-height:44px}
+input:focus,select:focus,button:focus-visible{outline:3px solid var(--amber);outline-offset:1px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:inherit;cursor:pointer}
+.btn{display:block;width:100%;background:var(--amber);color:var(--navy);border:none;border-radius:12px;padding:13px 16px;font-weight:700;font-size:17px;margin-top:14px;min-height:46px}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:600;margin-top:8px}
+.list .inc{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.list .inc:last-child{border-bottom:none}
+.inc .who{font-weight:700}
+.inc .amt{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.inc .sub{font-size:13px;color:var(--muted);font-weight:400}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 4px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12.5px;color:var(--muted);font-weight:700}
+.neg{color:var(--danger);font-weight:700}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs .in{display:flex;width:100%;max-width:480px}
+nav.tabs button{flex:1;background:none;border:none;color:var(--muted);padding:9px 2px 8px;font-size:12.5px;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:56px;font-weight:600}
+nav.tabs button svg{width:24px;height:24px}
+nav.tabs button[aria-selected="true"]{color:var(--accent-text)}
+nav.tabs button[aria-selected="true"] .ind{background:var(--green-soft)}
+.ind{padding:3px 16px;border-radius:14px;display:flex}
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:15.5px;white-space:pre-line}
+.msg.u{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:4px}
+.msg.a{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg .tag{display:block;font-size:11.5px;color:var(--muted);margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip{background:var(--chip);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:9px 13px;font-size:14.5px;font-weight:600;min-height:40px}
+.sendrow{display:flex;gap:8px}
+.sendrow .btn{width:auto;margin:0;padding:0 18px}
+.foot{font-size:12.5px;color:var(--muted);margin:14px 4px 0;text-align:center}
+svg text{font-family:inherit}
+@media (min-width:600px){ body{padding:18px 0} .app{border-radius:22px;overflow:hidden;box-shadow:0 8px 40px rgba(14,42,71,.18);min-height:820px} nav.tabs{position:sticky;bottom:0} }
+.acad{background:#FDEFD8;color:#5A3300;font-size:12.5px;line-height:1.35;padding:6px 14px;text-align:center;border-bottom:1px solid #F0D5A8}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="32" height="32" viewBox="0 0 64 64" role="img" aria-label="Isotipo de Caudal"><rect width="64" height="64" rx="15" fill="#163A5F"/><circle cx="32" cy="32" r="17" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-dasharray="80 26.8" transform="rotate(45 32 32)"/><path d="M13 37 C22 26 30 47 39 35 S52 27 59 31" fill="none" stroke="#F4A23A" stroke-width="5.5" stroke-linecap="round"/></svg>
+      Caudal
+    </div>
+    <span class="pill">Datos de demostración</span>
+  </header>
+  <div class="acad" role="note"><b>Proyecto académico de la UPTC.</b> No es un producto real ni asesoría financiera.</div>
+  <main id="view" aria-live="polite"></main>
+  <nav class="tabs" aria-label="Secciones"><div class="in" id="tabs"></div></nav>
+</div>
+
+<script>
+/* Caudal — motor de cálculo del MVP
+   Parámetros 2026 verificados:
+   - SMMLV $1.750.905 (Decreto 1469 de 2025)
+   - UVT $52.374 (Resolución DIAN 000238 de 2025)
+   - IBC independiente por prestación de servicios = 40 % del ingreso mensual (sin IVA),
+     piso 1 SMMLV, tope 25 SMMLV (Ley 2277 de 2022, art. 89)
+   - Salud 12,5 %, pensión 16 %, ARL nivel I 0,522 %, Fondo de Solidaridad Pensional 1 % desde 4 SMMLV
+   - Tarifa de renta personas naturales: art. 241 del Estatuto Tributario
+   Es una ESTIMACIÓN ORIENTATIVA, no asesoría tributaria. */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory();
+  else root.CaudalEngine = factory();
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const PARAMS = {
+    year: 2026,
+    smmlv: 1750905,
+    uvt: 52374,
+    ibcPct: 0.40,
+    saludPct: 0.125,
+    pensionPct: 0.16,
+    arlNivelI: 0.00522,
+    fspDesdeSmmlv: 4,
+    fspHastaSmmlv: 16,
+    fspPct: 0.01,
+    ibcMaxSmmlv: 25
+  };
+
+  // [desde UVT, hasta UVT, tarifa marginal, impuesto fijo en UVT]
+  const TAX_TABLE = [
+    [0, 1090, 0, 0],
+    [1090, 1700, 0.19, 0],
+    [1700, 4100, 0.28, 116],
+    [4100, 8670, 0.33, 788],
+    [8670, 18970, 0.35, 2296],
+    [18970, 31000, 0.37, 5901],
+    [31000, Infinity, 0.39, 10352]
+  ];
+
+  const r = (n) => Math.round(n);
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const mean = (a) => (a.length ? sum(a) / a.length : 0);
+  const stdev = (a) => {
+    if (a.length < 2) return 0;
+    const m = mean(a);
+    return Math.sqrt(sum(a.map((x) => (x - m) * (x - m))) / (a.length - 1));
+  };
+
+  function toCOP(amount, currency, trm) {
+    return currency === "USD" ? r(amount * trm) : r(amount);
+  }
+
+  /** Aportes mensuales de un independiente por prestación de servicios. */
+  function socialSecurity(monthlyIncomeCOP, opts, p) {
+    p = p || PARAMS;
+    opts = opts || {};
+    const zero = { obligado: false, ibc: 0, salud: 0, pension: 0, fsp: 0, arl: 0, total: 0 };
+    if (!(monthlyIncomeCOP >= p.smmlv)) return zero;
+    const ibc = r(Math.min(Math.max(monthlyIncomeCOP * p.ibcPct, p.smmlv), p.ibcMaxSmmlv * p.smmlv));
+    const salud = r(ibc * p.saludPct);
+    const pension = r(ibc * p.pensionPct);
+    const fspAplica = ibc >= p.fspDesdeSmmlv * p.smmlv && ibc <= p.fspHastaSmmlv * p.smmlv;
+    const fsp = fspAplica ? r(ibc * p.fspPct) : 0;
+    const arl = opts.arl ? r(ibc * p.arlNivelI) : 0;
+    return { obligado: true, ibc, salud, pension, fsp, arl, total: salud + pension + fsp + arl };
+  }
+
+  /** Impuesto de renta (art. 241 ET) para una renta líquida gravable en pesos. */
+  function incomeTax(taxableCOP, p) {
+    p = p || PARAMS;
+    const x = Math.max(0, taxableCOP) / p.uvt;
+    for (const [desde, hasta, marg, fijo] of TAX_TABLE) {
+      if (x > desde && x <= hasta) return { uvt: (x - desde) * marg + fijo, cop: r(((x - desde) * marg + fijo) * p.uvt) };
+    }
+    return { uvt: 0, cop: 0 };
+  }
+
+  /** Estimación conservadora del impuesto anual: sin renta exenta ni otras deducciones. */
+  function estimateAnnualTax(avgMonthlyIncomeCOP, opts, p) {
+    p = p || PARAMS;
+    opts = opts || {};
+    const annual = avgMonthlyIncomeCOP * 12;
+    const ss = socialSecurity(avgMonthlyIncomeCOP, opts, p);
+    const base = Math.max(0, annual - 12 * (ss.salud + ss.pension) - (opts.costs || 0));
+    const t = incomeTax(base, p);
+    return { annual: r(annual), base: r(base), uvt: t.uvt, tax: t.cop };
+  }
+
+  /** Reparte un ingreso mensual en "sobres". */
+  function monthBreakdown(billedCOP, ctx, p) {
+    p = p || PARAMS;
+    const ss = socialSecurity(billedCOP, { arl: ctx.arl }, p);
+    const retencion = r(billedCOP * (ctx.retencionPct || 0));
+    const rentaProv = Math.max(0, r(ctx.annualTax / 12) - retencion);
+    const fondoGap = Math.max(0, (ctx.fondoObjetivo || 0) - (ctx.fondoActual || 0));
+    const fondo = Math.min(fondoGap, r(billedCOP * (ctx.fondoPct || 0)));
+    const cash = billedCOP - retencion;
+    const disponible = cash - ss.total - rentaProv - fondo;
+    return { billed: r(billedCOP), retencion, ss, rentaProv, fondo, cash: r(cash), disponible: r(disponible) };
+  }
+
+  /** Total facturado por mes (clave YYYY-MM) a partir de una lista de ingresos. */
+  function monthlyTotals(incomes, trm) {
+    const m = {};
+    incomes.forEach((i) => {
+      const k = i.fecha.slice(0, 7);
+      m[k] = (m[k] || 0) + toCOP(i.monto, i.moneda, i.trm || trm);
+    });
+    return m;
+  }
+
+  /** Sueldo estable sugerido: promedio del disponible de los últimos n meses, redondeado hacia abajo a $10.000. */
+  function stableSalary(availableByMonth, n) {
+    const last = availableByMonth.slice(-(n || 6));
+    const avg = mean(last);
+    return Math.max(0, Math.floor(avg / 10000) * 10000);
+  }
+
+  /** Proyección de la bolsa de estabilización a `horizon` meses en dos escenarios. */
+  function forecast(monthTotalsArr, ctx, salary, horizon, p) {
+    p = p || PARAMS;
+    horizon = horizon || 3;
+    const last = monthTotalsArr.slice(-6);
+    const avg = mean(last);
+    const sd = stdev(last);
+    const scenarios = { base: avg, pesimista: Math.max(0, avg - sd) };
+    const out = {};
+    Object.keys(scenarios).forEach((name) => {
+      const income = scenarios[name];
+      let pool = ctx.bolsaActual || 0;
+      const rows = [];
+      for (let k = 1; k <= horizon; k++) {
+        const b = monthBreakdown(income, ctx, p);
+        pool = pool + b.disponible - salary;
+        rows.push({ mes: k, ingreso: r(income), disponible: b.disponible, bolsa: r(pool) });
+      }
+      out[name] = { ingresoMensual: r(income), rows, minBolsa: Math.min.apply(null, rows.map((x) => x.bolsa)) };
+    });
+    return { avg: r(avg), sd: r(sd), scenarios: out };
+  }
+
+  return { PARAMS, TAX_TABLE, toCOP, socialSecurity, incomeTax, estimateAnnualTax, monthBreakdown, monthlyTotals, stableSalary, forecast, mean, stdev };
+});
+
+</script>
+<script>
+(function(){
+const E = CaudalEngine;
+const $ = (s, el) => (el || document).querySelector(s);
+const money = (n) => (n < 0 ? "−\u2060" : "") + "$" + String(Math.abs(Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const mesLabel = (k) => { const [y,m] = k.split("-"); return MESES[+m-1] + " " + y; };
+const mesCorto = (k) => MESES[+k.split("-")[1]-1];
+const mm = (v) => (v/1e6).toFixed(1).replace(".", ",").replace("-", "−") + " M";
+
+const DEMO = () => ({
+  incomes: [
+    {id:1, fecha:"2026-03-06", cliente:"Agencia Norte (demo)", monto:4200000, moneda:"COP"},
+    {id:2, fecha:"2026-03-22", cliente:"Cliente exterior A (demo)", monto:500, moneda:"USD"},
+    {id:3, fecha:"2026-04-09", cliente:"Studio Atlas (demo)", monto:2000, moneda:"USD"},
+    {id:4, fecha:"2026-04-25", cliente:"Clínica Andes (demo)", monto:5000000, moneda:"COP"},
+    {id:5, fecha:"2026-05-12", cliente:"Agencia Norte (demo)", monto:3400000, moneda:"COP"},
+    {id:6, fecha:"2026-05-27", cliente:"Cliente exterior A (demo)", monto:500, moneda:"USD"},
+    {id:7, fecha:"2026-06-08", cliente:"Studio Atlas (demo)", monto:3000, moneda:"USD"},
+    {id:8, fecha:"2026-06-24", cliente:"Constructora Sur (demo)", monto:3200000, moneda:"COP"},
+    {id:9, fecha:"2026-07-15", cliente:"Clínica Andes (demo)", monto:8100000, moneda:"COP"},
+    {id:10, fecha:"2026-08-04", cliente:"Agencia Norte (demo)", monto:4500000, moneda:"COP"},
+    {id:11, fecha:"2026-08-26", cliente:"Studio Atlas (demo)", monto:1500, moneda:"USD"}
+  ],
+  settings: {trm:3900, retencionPct:0, arl:false, fondoPct:10, fondoObjetivo:12000000, fondoActual:6000000, bolsaActual:4500000},
+  chat: [], tab: "inicio", nextId: 12
+});
+let state = DEMO();
+
+function derive(){
+  const S = state.settings;
+  const totals = E.monthlyTotals(state.incomes, S.trm);
+  const months = Object.keys(totals).sort();
+  const arr = months.map(k => totals[k]);
+  const avg = E.mean(arr.slice(-6));
+  const est = E.estimateAnnualTax(avg, {arl:S.arl});
+  const ctx = {arl:S.arl, retencionPct:S.retencionPct/100, annualTax:est.tax, fondoObjetivo:S.fondoObjetivo, fondoActual:S.fondoActual, fondoPct:S.fondoPct/100, bolsaActual:S.bolsaActual};
+  const bd = months.map(k => E.monthBreakdown(totals[k], ctx));
+  const salary = E.stableSalary(bd.map(b => b.disponible), 6);
+  const fc = E.forecast(arr, ctx, salary, 3);
+  const cur = months.length - 1;
+  return {S, totals, months, arr, avg, est, ctx, bd, salary, fc, cur, curKey: months[cur], curBd: bd[cur]};
+}
+
+/* ---------- vistas ---------- */
+function vInicio(d){
+  const b = d.curBd, t = b.billed || 1;
+  const seg = [
+    ["Retenciones descontadas por clientes", b.retencion, "var(--c-ret)"],
+    ["Seguridad social (PILA)", b.ss.total, "var(--c-ss)"],
+    ["Impuesto de renta (provisión)", b.rentaProv, "var(--c-tax)"],
+    ["Fondo de emergencia", b.fondo, "var(--c-fund)"],
+    ["Disponible para ti", b.disponible, "var(--c-free)"]
+  ].filter(s => s[1] > 0);
+  const pct = Math.min(100, Math.round(d.S.fondoActual / Math.max(1, d.S.fondoObjetivo) * 100));
+  const worst = d.fc.scenarios.pesimista;
+  const alert = worst.minBolsa < 0
+    ? `<div class="alert warn"><b>Atención:</b> en un escenario pesimista tu bolsa de estabilización se agotaría en el mes ${worst.rows.findIndex(r => r.bolsa < 0) + 1}. Revisa la pestaña Proyección.</div>`
+    : `<div class="alert ok"><b>Todo en orden:</b> incluso en el escenario pesimista tu bolsa se mantiene positiva los próximos 3 meses.</div>`;
+  return `
+  <section class="card hero">
+    <div class="lbl">Tu sueldo estable sugerido</div>
+    <div class="big">${money(d.salary)} <small>/ mes</small></div>
+    <p>Promedio de lo que te queda libre en los últimos ${Math.min(6, d.months.length)} meses, después de apartar aportes, impuestos y fondo.</p>
+  </section>
+  ${alert}
+  <section class="card">
+    <div class="row"><h3>Ingreso de ${mesLabel(d.curKey)}</h3><span class="kpi">${money(b.billed)}</span></div>
+    <div class="stack" role="img" aria-label="Distribución del ingreso del mes">${seg.map(s => `<span style="width:${(s[1]/t*100).toFixed(2)}%;background:${s[2]}"></span>`).join("")}</div>
+    <div class="legend">${seg.map(s => `<div class="it"><span><span class="dot" style="background:${s[2]}"></span>${s[0]}</span><b>${money(s[1])}</b></div>`).join("")}</div>
+  </section>
+  <section class="card">
+    <h3>Fondo de emergencia</h3><div style="margin-top:4px;font-size:17px"><b>${money(d.S.fondoActual)}</b> <span class="muted">de ${money(d.S.fondoObjetivo)}</span></div>
+    <div class="bar" role="img" aria-label="Avance del fondo ${pct}%"><i style="width:${pct}%"></i></div>
+    <p class="note">${pct}% de tu meta. Caudal aparta ${d.S.fondoPct}% de cada ingreso hasta completarla.</p>
+  </section>
+  <p class="foot">Estimaciones orientativas con parámetros 2026 (SMMLV ${money(E.PARAMS.smmlv)}, UVT ${money(E.PARAMS.uvt)}). No reemplazan a un contador.</p>`;
+}
+
+function chartBars(d){
+  const W=420,H=170,pl=8,pr=8,pt=14,pb=26;
+  const max = Math.max(...d.arr, d.avg) * 1.12;
+  const bw = (W-pl-pr)/d.arr.length;
+  const y = v => pt + (H-pt-pb) * (1 - v/max);
+  const bars = d.arr.map((v,i) => {
+    const x = pl + i*bw + bw*0.18, w = bw*0.64, cur = i === d.arr.length-1;
+    return `<rect x="${x.toFixed(1)}" y="${y(v).toFixed(1)}" width="${w.toFixed(1)}" height="${(H-pb-y(v)).toFixed(1)}" rx="5" fill="${cur ? "var(--c-free)" : "var(--c-ss)"}"/>
+    <text x="${(x+w/2).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--muted)">${mesCorto(d.months[i])}</text>
+    <text x="${(x+w/2).toFixed(1)}" y="${(y(v)-4).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--text)">${mm(v)}</text>`;
+  }).join("");
+  const ya = y(d.avg).toFixed(1);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Ingresos mensuales y promedio">${bars}<line x1="${pl}" x2="${W-pr}" y1="${ya}" y2="${ya}" stroke="var(--amber)" stroke-width="2" stroke-dasharray="5 4"/><text x="${pl}" y="${(+ya-6)}" text-anchor="start" font-size="11.5" fill="var(--text)" font-weight="700">promedio ${mm(d.avg)}</text></svg>`;
+}
+
+function vIngresos(d){
+  const rows = [...state.incomes].sort((a,b) => b.fecha.localeCompare(a.fecha)).slice(0,7).map(i => {
+    const cop = E.toCOP(i.monto, i.moneda, d.S.trm);
+    return `<div class="inc"><div><div class="who">${i.cliente}</div><div class="sub">${i.fecha}${i.moneda==="USD" ? " · USD " + i.monto.toLocaleString("es-CO") + " × TRM " + d.S.trm.toLocaleString("es-CO") : ""}</div></div><div class="amt">${money(cop)}</div></div>`;
+  }).join("");
+  return `
+  <h2>Ingresos por mes</h2>
+  <section class="card">${chartBars(d)}<p class="note">Barra verde: mes de referencia. Línea punteada: promedio de los últimos 6 meses.</p></section>
+  <h2>Registrar un ingreso</h2>
+  <section class="card">
+    <form id="fIng" autocomplete="off">
+      <label for="fc">Cliente</label><input id="fc" placeholder="Ej.: Agencia Norte" required>
+      <div class="grid2">
+        <div><label for="fm">Monto (sin IVA)</label><input id="fm" type="number" inputmode="decimal" min="1" step="any" placeholder="3000000" required></div>
+        <div><label for="fx">Moneda</label><select id="fx"><option>COP</option><option>USD</option></select></div>
+      </div>
+      <label for="ff">Fecha</label><input id="ff" type="date" value="${d.curKey}-28" required>
+      <button class="btn" type="submit">Agregar y recalcular</button>
+    </form>
+  </section>
+  <h2>Últimos registros</h2>
+  <section class="card list">${rows}</section>`;
+}
+
+function chartLine(d){
+  const W=420,H=200,pl=44,pr=14,pt=16,pb=28;
+  const b = d.fc.scenarios.base, p = d.fc.scenarios.pesimista;
+  const s0 = d.S.bolsaActual;
+  const bs = [s0, ...b.rows.map(r => r.bolsa)], ps = [s0, ...p.rows.map(r => r.bolsa)];
+  const all = bs.concat(ps, [0]);
+  let lo = Math.min(...all), hi = Math.max(...all);
+  const padv = (hi - lo) * 0.12 || 1e6; lo -= padv; hi += padv;
+  const x = i => pl + (W-pl-pr) * i/3, y = v => pt + (H-pt-pb) * (1 - (v-lo)/(hi-lo));
+  const path = a => a.map((v,i) => (i?"L":"M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join(" ");
+  const dots = (a,c) => a.map((v,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="4.5" fill="${c}"/>`).join("");
+  const tk = [Math.max(...all), 0, Math.min(...all)]; const ticks = tk.map(v => `<text x="${pl-6}" y="${(y(v)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--muted)">${v === 0 ? "0" : mm(v)}</text>`).join("");
+  const xl = ["Hoy","+1 mes","+2 meses","+3 meses"].map((t,i) => `<text x="${x(i).toFixed(1)}" y="${H-8}" text-anchor="${i===0?"start":i===3?"end":"middle"}" font-size="12" fill="var(--muted)">${t}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Proyección de la bolsa de estabilización a tres meses">
+    <line x1="${pl}" x2="${W-pr}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" stroke="var(--danger)" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <path d="${path(bs)}" fill="none" stroke="var(--c-free)" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="${path(ps)}" fill="none" stroke="var(--amber)" stroke-width="3.5" stroke-linejoin="round"/>
+    ${dots(bs,"var(--c-free)")}${dots(ps,"var(--amber)")}${ticks}${xl}</svg>`;
+}
+
+function vProyeccion(d){
+  const b = d.fc.scenarios.base, p = d.fc.scenarios.pesimista;
+  const first = p.rows.findIndex(r => r.bolsa < 0);
+  const msg = first >= 0
+    ? `<div class="alert warn"><b>Escenario pesimista:</b> con ingresos de ${money(p.ingresoMensual)} al mes tu bolsa se agotaría en el mes ${first+1} y su punto más bajo sería ${money(p.minBolsa)}. Podrías bajar tu sueldo estable a ${money(Math.max(0, Math.floor((d.salary + p.minBolsa/3)/10000)*10000))} o subir el aporte al fondo.</div>`
+    : `<div class="alert ok"><b>Escenario pesimista:</b> con ingresos de ${money(p.ingresoMensual)} al mes tu bolsa se mantiene positiva.</div>`;
+  const tr = (r,i) => `<tr><td>Mes ${i+1}</td><td>${money(r.ingreso)}</td><td>${money(r.disponible)}</td><td class="${r.bolsa<0?"neg":""}">${money(r.bolsa)}</td></tr>`;
+  return `
+  <h2>Bolsa de estabilización a 3 meses</h2>
+  <section class="card">
+    <div class="row" style="justify-content:flex-start;gap:16px;font-size:14px;margin-bottom:6px"><span><span class="dot" style="background:var(--c-free)"></span>Escenario base</span><span><span class="dot" style="background:var(--amber)"></span>Escenario pesimista</span></div>
+    ${chartLine(d)}
+    <p class="note">Base: ingreso promedio de 6 meses. Pesimista: promedio menos una desviación estándar. Sueldo estable aplicado: ${money(d.salary)} al mes. Línea roja: cero.</p>
+  </section>
+  ${msg}
+  <section class="card"><h3 style="margin-bottom:6px">Escenario base</h3>
+    <table><tr><th>Mes</th><th>Ingreso</th><th>Libre</th><th>Bolsa</th></tr>${b.rows.map(tr).join("")}</table></section>
+  <section class="card"><h3 style="margin-bottom:6px">Escenario pesimista</h3>
+    <table><tr><th>Mes</th><th>Ingreso</th><th>Libre</th><th>Bolsa</th></tr>${p.rows.map(tr).join("")}</table></section>`;
+}
+
+const PREGUNTAS = [
+  ["gasto", "¿Cuánto puedo gastar este mes?"],
+  ["impuestos", "¿Cuánto debo apartar para impuestos?"],
+  ["pila", "¿Cuánto pago de seguridad social?"],
+  ["alcanza", "¿Me alcanza la bolsa para 3 meses?"]
+];
+function responder(key, d){
+  const b = d.curBd, s = b.ss;
+  if (key === "gasto") return `Tu sueldo estable sugerido es ${money(d.salary)} al mes.\nEn ${mesLabel(d.curKey)} facturaste ${money(b.billed)}; después de apartar ${money(s.total)} de seguridad social, ${money(b.rentaProv)} de renta y ${money(b.fondo)} para tu fondo, te quedaron ${money(b.disponible)} libres. La diferencia con tu sueldo estable ${b.disponible >= d.salary ? "va a tu bolsa de estabilización." : "se cubre con tu bolsa de estabilización."}`;
+  if (key === "impuestos") return `Con tu ingreso promedio de ${money(d.avg)} al mes, estimo un impuesto de renta anual de ${money(d.est.tax)} (${d.est.uvt.toFixed(1)} UVT), es decir ${money(Math.round(d.est.tax/12))} al mes.\nEs una estimación conservadora: no incluye renta exenta ni otras deducciones. Confírmala con tu contador.`;
+  if (key === "pila") return s.obligado
+    ? `Para ${mesLabel(d.curKey)}: tu IBC es ${money(s.ibc)} (40 % del ingreso, con piso de 1 SMMLV).\nSalud 12,5 %: ${money(s.salud)}\nPensión 16 %: ${money(s.pension)}${s.fsp ? "\nFondo de Solidaridad Pensional 1 %: " + money(s.fsp) : ""}${s.arl ? "\nARL nivel I: " + money(s.arl) : ""}\nTotal a pagar en la PILA: ${money(s.total)}.`
+    : `Este mes tu ingreso es menor a 1 SMMLV (${money(E.PARAMS.smmlv)}), así que no genera aportes obligatorios en este cálculo.`;
+  if (key === "alcanza") {
+    const w = d.fc.scenarios.pesimista, k = w.rows.findIndex(r => r.bolsa < 0);
+    return `En el escenario base tu bolsa termina en ${money(d.fc.scenarios.base.rows[2].bolsa)} dentro de 3 meses.\nEn el pesimista (ingresos de ${money(w.ingresoMensual)} al mes) ${k >= 0 ? "se agota en el mes " + (k+1) + " y su punto más bajo sería " + money(w.minBolsa) + "." : "se mantiene positiva y termina en " + money(w.rows[2].bolsa) + "."}`;
+  }
+  return "En este MVP respondo preguntas frecuentes sobre tu sueldo estable, impuestos, seguridad social y proyección. Prueba con uno de los botones.";
+}
+function adivinar(txt){
+  const t = txt.toLowerCase();
+  if (/gast|sueldo|cu[aá]nto puedo/.test(t)) return "gasto";
+  if (/impuest|renta|dian/.test(t)) return "impuestos";
+  if (/pila|seguridad|salud|pensi[oó]n|aporte/.test(t)) return "pila";
+  if (/alcanza|proyec|bolsa|meses/.test(t)) return "alcanza";
+  return null;
+}
+function vAsistente(d){
+  const msgs = state.chat.length ? state.chat : [{r:"a", t:"Hola, soy el asistente de Caudal. Pregúntame por tu sueldo estable, impuestos, seguridad social o proyección."}];
+  return `
+  <h2>Asistente</h2>
+  <section class="card"><div class="chat">${msgs.map((m,i) => `<div class="msg ${m.r}">${m.t}${m.r==="a" && i>0 ? '<span class="tag">Respuesta armada con plantillas y tus datos (simulación del MVP)</span>' : ""}</div>`).join("")}</div>
+  <div class="chips">${PREGUNTAS.map(q => `<button class="chip" data-q="${q[0]}">${q[1]}</button>`).join("")}</div>
+  <form id="fChat" class="sendrow" autocomplete="off"><input id="cq" placeholder="Escribe tu pregunta" aria-label="Escribe tu pregunta"><button class="btn" type="submit">Enviar</button></form>
+  </section>
+  <p class="foot">En la versión completa este asistente se conectaría a un modelo de lenguaje. Aquí usa plantillas para probar la experiencia.</p>`;
+}
+
+function vAjustes(d){
+  const S = d.S, P = E.PARAMS;
+  return `
+  <h2>Ajustes</h2>
+  <section class="card"><form id="fSet" autocomplete="off">
+    <label for="s1">TRM de ejemplo (COP por USD)</label><input id="s1" type="number" min="1" value="${S.trm}">
+    <label for="s2">Retención en la fuente que te aplican (%)</label><input id="s2" type="number" min="0" max="35" step="0.5" value="${S.retencionPct}">
+    <label for="s3">Aporte al fondo de emergencia (% de cada ingreso)</label><input id="s3" type="number" min="0" max="50" value="${S.fondoPct}">
+    <div class="grid2"><div><label for="s4">Meta del fondo (COP)</label><input id="s4" type="number" min="0" value="${S.fondoObjetivo}"></div><div><label for="s5">Fondo actual (COP)</label><input id="s5" type="number" min="0" value="${S.fondoActual}"></div></div>
+    <label for="s6">Bolsa de estabilización actual (COP)</label><input id="s6" type="number" value="${S.bolsaActual}">
+    <label for="s7">Incluir ARL nivel I en la PILA</label><select id="s7"><option value="0" ${S.arl?"":"selected"}>No</option><option value="1" ${S.arl?"selected":""}>Sí (0,522 %)</option></select>
+    <button class="btn" type="submit">Guardar ajustes</button>
+    <button class="btn ghost" type="button" id="reset">Restablecer datos de demostración</button>
+  </form></section>
+  <section class="card"><h3 style="margin-bottom:6px">Parámetros ${P.year} usados</h3>
+    <p class="note" style="margin:0">SMMLV ${money(P.smmlv)} (Decreto 1469 de 2025) · UVT ${money(P.uvt)} (Res. DIAN 000238 de 2025) · IBC = 40 % del ingreso, piso 1 SMMLV, tope 25 SMMLV · Salud 12,5 % · Pensión 16 % · Renta: tabla del art. 241 E.T.</p>
+    <p class="note">Alcance del MVP: independientes por prestación de servicios. Estimación orientativa, no constituye asesoría tributaria.</p></section>`;
+}
+
+/* ---------- render ---------- */
+const ICONS = {
+  inicio:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+  ingresos:'<rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="2"/>',
+  proyeccion:'<path d="M3 17l5-5 4 3 8-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 6h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  asistente:'<path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>',
+  ajustes:'<circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+};
+const TABS = [["inicio","Inicio"],["ingresos","Ingresos"],["proyeccion","Proyección"],["asistente","Asistente"],["ajustes","Ajustes"]];
+
+function render(){
+  const d = derive();
+  $("#tabs").innerHTML = TABS.map(t => `<button role="tab" data-tab="${t[0]}" aria-selected="${state.tab===t[0]}"><span class="ind"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[t[0]]}</svg></span>${t[1]}</button>`).join("");
+  const v = {inicio:vInicio, ingresos:vIngresos, proyeccion:vProyeccion, asistente:vAsistente, ajustes:vAjustes}[state.tab](d);
+  $("#view").innerHTML = v;
+  bind(d);
+}
+
+function bind(d){
+  document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { state.tab = b.dataset.tab; render(); window.scrollTo(0,0); });
+  const fi = $("#fIng");
+  if (fi) fi.onsubmit = (e) => { e.preventDefault();
+    const monto = parseFloat($("#fm").value);
+    if (!(monto > 0)) return;
+    state.incomes.push({id: state.nextId++, fecha: $("#ff").value, cliente: $("#fc").value.trim() || "Cliente", monto, moneda: $("#fx").value});
+    render();
+  };
+  const fs = $("#fSet");
+  if (fs) fs.onsubmit = (e) => { e.preventDefault();
+    state.settings = {trm: +$("#s1").value || 1, retencionPct: +$("#s2").value || 0, fondoPct: +$("#s3").value || 0, fondoObjetivo: +$("#s4").value || 0, fondoActual: +$("#s5").value || 0, bolsaActual: +$("#s6").value || 0, arl: $("#s7").value === "1"};
+    state.tab = "inicio"; render();
+  };
+  const rs = $("#reset"); if (rs) rs.onclick = () => { state = DEMO(); render(); };
+  document.querySelectorAll("[data-q]").forEach(b => b.onclick = () => { const q = PREGUNTAS.find(x => x[0] === b.dataset.q);
+    if (!state.chat.length) state.chat.push({r:"a", t:"Hola, soy el asistente de Caudal. Pregúntame por tu sueldo estable, impuestos, seguridad social o proyección."});
+    state.chat.push({r:"u", t:q[1]}, {r:"a", t:responder(q[0], d)}); render(); });
+  const fc = $("#fChat");
+  if (fc) fc.onsubmit = (e) => { e.preventDefault(); const t = $("#cq").value.trim(); if (!t) return;
+    if (!state.chat.length) state.chat.push({r:"a", t:"Hola, soy el asistente de Caudal. Pregúntame por tu sueldo estable, impuestos, seguridad social o proyección."});
+    state.chat.push({r:"u", t}, {r:"a", t: responder(adivinar(t), d)}); render(); };
+}
+
+// parámetros para capturas: #tab=inicio
+const h = (location.hash.match(/tab=(\w+)/) || [])[1];
+if (h && TABS.some(t => t[0] === h)) state.tab = h;
+render();
+})();
+</script>
+</body>
+</html>
