@@ -93,6 +93,12 @@ nav.tabs button[aria-selected="true"] .ind{background:var(--green-soft)}
 .foot{font-size:12.5px;color:var(--muted);margin:14px 4px 0;text-align:center}
 svg text{font-family:inherit}
 @media (min-width:600px){ body{padding:18px 0} .app{border-radius:22px;overflow:hidden;box-shadow:0 8px 40px rgba(14,42,71,.18);min-height:820px} nav.tabs{position:sticky;bottom:0} }
+details.help{background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14.5px}
+details.help summary{cursor:pointer;font-weight:700;min-height:24px}
+details.help p{margin:8px 0 0}
+.hint{font-size:13px;color:var(--muted);margin:4px 2px 0}
+.btn.sm{display:inline-block;width:auto;margin:10px 0 0;padding:9px 14px;font-size:15px;min-height:40px}
+.alert .btn.ghost{color:inherit;border-color:currentColor}
 .acad{background:#FDEFD8;color:#5A3300;font-size:12.5px;line-height:1.35;padding:6px 14px;text-align:center;border-bottom:1px solid #F0D5A8}
 </style>
 </head>
@@ -282,7 +288,7 @@ const DEMO = () => ({
     {id:11, fecha:"2026-08-26", cliente:"Studio Atlas (demo)", monto:1500, moneda:"USD"}
   ],
   settings: {trm:3900, retencionPct:0, arl:false, fondoPct:10, fondoObjetivo:12000000, fondoActual:6000000, bolsaActual:4500000},
-  chat: [], tab: "inicio", nextId: 12
+  chat: [], tab: "inicio", nextId: 12, salaryOverride: null, last: null, flash: false
 });
 let state = DEMO();
 
@@ -295,11 +301,18 @@ function derive(){
   const est = E.estimateAnnualTax(avg, {arl:S.arl});
   const ctx = {arl:S.arl, retencionPct:S.retencionPct/100, annualTax:est.tax, fondoObjetivo:S.fondoObjetivo, fondoActual:S.fondoActual, fondoPct:S.fondoPct/100, bolsaActual:S.bolsaActual};
   const bd = months.map(k => E.monthBreakdown(totals[k], ctx));
-  const salary = E.stableSalary(bd.map(b => b.disponible), 6);
+  const salaryAuto = E.stableSalary(bd.map(b => b.disponible), 6);
+  const salary = state.salaryOverride != null ? state.salaryOverride : salaryAuto;
   const fc = E.forecast(arr, ctx, salary, 3);
   const cur = months.length - 1;
-  return {S, totals, months, arr, avg, est, ctx, bd, salary, fc, cur, curKey: months[cur], curBd: bd[cur]};
+  return {S, totals, months, arr, avg, est, ctx, bd, salary, salaryAuto, fc, cur, curKey: months[cur], curBd: bd[cur]};
 }
+
+/* ---------- ayudas (mejoras tras la prueba con usuarios) ---------- */
+const ayudaBolsa = (d) => `<details class="help"><summary>¿Bolsa de estabilización o fondo de emergencia?</summary>
+  <p><b>Bolsa de estabilización (${money(d.S.bolsaActual)}):</b> dinero que usas para completar tu sueldo estable en los meses en que te queda menos de lo normal.</p>
+  <p><b>Fondo de emergencia (${money(d.S.fondoActual)} de ${money(d.S.fondoObjetivo)}):</b> ahorro aparte para imprevistos, como una enfermedad o un tiempo sin clientes. No es lo mismo que la bolsa.</p></details>`;
+const lastNote = () => state.last ? `<p class="note" style="margin:0 2px 12px">Los valores cambiaron por tu último registro (${state.last.cliente}, ${money(state.last.cop)}): tu sueldo estable sugerido pasó de ${money(state.last.salBefore)} a ${money(state.last.salAfter)} y tu impuesto de renta mensual estimado, de ${money(state.last.taxBefore)} a ${money(state.last.taxAfter)}.</p>` : "";
 
 /* ---------- vistas ---------- */
 function vInicio(d){
@@ -318,11 +331,13 @@ function vInicio(d){
     : `<div class="alert ok"><b>Todo en orden:</b> incluso en el escenario pesimista tu bolsa se mantiene positiva los próximos 3 meses.</div>`;
   return `
   <section class="card hero">
-    <div class="lbl">Tu sueldo estable sugerido</div>
+    <div class="lbl">${d.salary !== d.salaryAuto ? "Tu sueldo estable (ajustado por ti)" : "Tu sueldo estable sugerido"}</div>
     <div class="big">${money(d.salary)} <small>/ mes</small></div>
-    <p>Promedio de lo que te queda libre en los últimos ${Math.min(6, d.months.length)} meses, después de apartar aportes, impuestos y fondo.</p>
+    <p>${d.salary !== d.salaryAuto ? "El sugerido por Caudal era " + money(d.salaryAuto) + ". " : ""}Es lo que Caudal te sugiere gastar cada mes, como un sueldo fijo: el promedio de lo que te queda libre en los últimos ${Math.min(6, d.months.length)} meses, después de apartar aportes, impuestos y fondo. Caudal no mueve tu dinero.</p>
   </section>
+  ${lastNote()}
   ${alert}
+  ${ayudaBolsa(d)}
   <section class="card">
     <div class="row"><h3>Ingreso de ${mesLabel(d.curKey)}</h3><span class="kpi">${money(b.billed)}</span></div>
     <div class="stack" role="img" aria-label="Distribución del ingreso del mes">${seg.map(s => `<span style="width:${(s[1]/t*100).toFixed(2)}%;background:${s[2]}"></span>`).join("")}</div>
@@ -356,7 +371,10 @@ function vIngresos(d){
     const cop = E.toCOP(i.monto, i.moneda, d.S.trm);
     return `<div class="inc"><div><div class="who">${i.cliente}</div><div class="sub">${i.fecha}${i.moneda==="USD" ? " · USD " + i.monto.toLocaleString("es-CO") + " × TRM " + d.S.trm.toLocaleString("es-CO") : ""}</div></div><div class="amt">${money(cop)}</div></div>`;
   }).join("");
+  const L = state.last;
+  const flash = state.flash && L ? `<div class="alert ok" role="status"><b>Listo, se guardó.</b> Se sumó ${money(L.cop)} a tus ingresos de ${L.mes}: ahora son ${money(L.mesTotal)}. Tu sueldo estable sugerido pasó de ${money(L.salBefore)} a ${money(L.salAfter)} y tu impuesto de renta mensual estimado, de ${money(L.taxBefore)} a ${money(L.taxAfter)}.</div>` : "";
   return `
+  ${flash}
   <h2>Ingresos por mes</h2>
   <section class="card">${chartBars(d)}<p class="note">Barra verde: mes de referencia. Línea punteada: promedio de los últimos 6 meses.</p></section>
   <h2>Registrar un ingreso</h2>
@@ -367,7 +385,9 @@ function vIngresos(d){
         <div><label for="fm">Monto (sin IVA)</label><input id="fm" type="number" inputmode="decimal" min="1" step="any" placeholder="3000000" required></div>
         <div><label for="fx">Moneda</label><select id="fx"><option>COP</option><option>USD</option></select></div>
       </div>
+      <p class="hint">Escribe el valor antes de IVA. Si cobras IVA, no lo sumes aquí.</p>
       <label for="ff">Fecha</label><input id="ff" type="date" value="${d.curKey}-28" required>
+      <p class="hint">Los datos de demostración llegan hasta ${mesLabel(d.curKey)}, por eso la fecha propuesta es de ese mes. Puedes cambiarla.</p>
       <button class="btn" type="submit">Agregar y recalcular</button>
     </form>
   </section>
@@ -398,20 +418,30 @@ function chartLine(d){
 function vProyeccion(d){
   const b = d.fc.scenarios.base, p = d.fc.scenarios.pesimista;
   const first = p.rows.findIndex(r => r.bolsa < 0);
+  const sug = Math.max(0, Math.floor((d.salary + p.minBolsa/3)/10000)*10000);
   const msg = first >= 0
-    ? `<div class="alert warn"><b>Escenario pesimista:</b> con ingresos de ${money(p.ingresoMensual)} al mes tu bolsa se agotaría en el mes ${first+1} y su punto más bajo sería ${money(p.minBolsa)}. Podrías bajar tu sueldo estable a ${money(Math.max(0, Math.floor((d.salary + p.minBolsa/3)/10000)*10000))} o subir el aporte al fondo.</div>`
+    ? `<div class="alert warn"><b>Escenario pesimista:</b> con ingresos de ${money(p.ingresoMensual)} al mes tu bolsa se agotaría en el mes ${first+1} y su punto más bajo sería ${money(p.minBolsa)}. Podrías bajar tu sueldo estable a ${money(sug)}.<br><button class="btn sm" type="button" id="applySal" data-sal="${sug}">Aplicar sueldo de ${money(sug)}</button></div>`
     : `<div class="alert ok"><b>Escenario pesimista:</b> con ingresos de ${money(p.ingresoMensual)} al mes tu bolsa se mantiene positiva.</div>`;
+  const adj = d.salary !== d.salaryAuto ? `<div class="alert ok"><b>Sueldo ajustado:</b> estás usando ${money(d.salary)} al mes en lugar del sugerido (${money(d.salaryAuto)}).<br><button class="btn ghost sm" type="button" id="undoSal">Volver al sugerido</button></div>` : "";
+  const dif = b.rows[0].disponible - d.salary;
+  const baseNote = Math.abs(dif) <= 0.05 * Math.max(1, d.salary)
+    ? `Cada mes te quedan libres ${money(b.rows[0].disponible)} y gastas ${money(d.salary)}: casi coinciden, por eso la bolsa casi no cambia.`
+    : dif > 0 ? `Cada mes te quedan libres ${money(b.rows[0].disponible)} y gastas ${money(d.salary)}, por eso la bolsa crece ${money(dif)} al mes.`
+    : `Cada mes te quedan libres ${money(b.rows[0].disponible)} y gastas ${money(d.salary)}, por eso la bolsa baja ${money(-dif)} al mes.`;
   const tr = (r,i) => `<tr><td>Mes ${i+1}</td><td>${money(r.ingreso)}</td><td>${money(r.disponible)}</td><td class="${r.bolsa<0?"neg":""}">${money(r.bolsa)}</td></tr>`;
   return `
+  ${lastNote()}
+  ${ayudaBolsa(d)}
   <h2>Bolsa de estabilización a 3 meses</h2>
   <section class="card">
     <div class="row" style="justify-content:flex-start;gap:16px;font-size:14px;margin-bottom:6px"><span><span class="dot" style="background:var(--c-free)"></span>Escenario base</span><span><span class="dot" style="background:var(--amber)"></span>Escenario pesimista</span></div>
     ${chartLine(d)}
-    <p class="note">Base: ingreso promedio de 6 meses. Pesimista: promedio menos una desviación estándar. Sueldo estable aplicado: ${money(d.salary)} al mes. Línea roja: cero.</p>
+    <p class="note">Base: como si cada mes ganaras tu promedio de los últimos 6 meses. Pesimista: como si todos los meses fueran flojos (tu promedio menos lo que suelen variar tus ingresos). Sueldo estable aplicado: ${money(d.salary)} al mes. Línea roja: cero.</p>
   </section>
-  ${msg}
+  ${adj}${msg}
   <section class="card"><h3 style="margin-bottom:6px">Escenario base</h3>
-    <table><tr><th>Mes</th><th>Ingreso</th><th>Libre</th><th>Bolsa</th></tr>${b.rows.map(tr).join("")}</table></section>
+    <table><tr><th>Mes</th><th>Ingreso</th><th>Libre</th><th>Bolsa</th></tr>${b.rows.map(tr).join("")}</table>
+    <p class="note">${baseNote}</p></section>
   <section class="card"><h3 style="margin-bottom:6px">Escenario pesimista</h3>
     <table><tr><th>Mes</th><th>Ingreso</th><th>Libre</th><th>Bolsa</th></tr>${p.rows.map(tr).join("")}</table></section>`;
 }
@@ -447,6 +477,7 @@ function vAsistente(d){
   const msgs = state.chat.length ? state.chat : [{r:"a", t:"Hola, soy el asistente de Caudal. Pregúntame por tu sueldo estable, impuestos, seguridad social o proyección."}];
   return `
   <h2>Asistente</h2>
+  ${lastNote()}
   <section class="card"><div class="chat">${msgs.map((m,i) => `<div class="msg ${m.r}">${m.t}${m.r==="a" && i>0 ? '<span class="tag">Respuesta armada con plantillas y tus datos (simulación del MVP)</span>' : ""}</div>`).join("")}</div>
   <div class="chips">${PREGUNTAS.map(q => `<button class="chip" data-q="${q[0]}">${q[1]}</button>`).join("")}</div>
   <form id="fChat" class="sendrow" autocomplete="off"><input id="cq" placeholder="Escribe tu pregunta" aria-label="Escribe tu pregunta"><button class="btn" type="submit">Enviar</button></form>
@@ -470,7 +501,8 @@ function vAjustes(d){
   </form></section>
   <section class="card"><h3 style="margin-bottom:6px">Parámetros ${P.year} usados</h3>
     <p class="note" style="margin:0">SMMLV ${money(P.smmlv)} (Decreto 1469 de 2025) · UVT ${money(P.uvt)} (Res. DIAN 000238 de 2025) · IBC = 40 % del ingreso, piso 1 SMMLV, tope 25 SMMLV · Salud 12,5 % · Pensión 16 % · Renta: tabla del art. 241 E.T.</p>
-    <p class="note">Alcance del MVP: independientes por prestación de servicios. Estimación orientativa, no constituye asesoría tributaria.</p></section>`;
+    <p class="note">Alcance del MVP: independientes por prestación de servicios. Estimación orientativa, no constituye asesoría tributaria.</p>
+    <p class="note">Versión 1.1 del prototipo: incluye las mejoras hechas tras una prueba con 2 usuarios.</p></section>`;
 }
 
 /* ---------- render ---------- */
@@ -492,14 +524,21 @@ function render(){
 }
 
 function bind(d){
-  document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { state.tab = b.dataset.tab; render(); window.scrollTo(0,0); });
+  document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { state.tab = b.dataset.tab; state.flash = false; render(); window.scrollTo(0,0); });
   const fi = $("#fIng");
   if (fi) fi.onsubmit = (e) => { e.preventDefault();
     const monto = parseFloat($("#fm").value);
     if (!(monto > 0)) return;
-    state.incomes.push({id: state.nextId++, fecha: $("#ff").value, cliente: $("#fc").value.trim() || "Cliente", monto, moneda: $("#fx").value});
-    render();
+    const inc = {id: state.nextId++, fecha: $("#ff").value, cliente: $("#fc").value.trim() || "Cliente", monto, moneda: $("#fx").value};
+    state.incomes.push(inc);
+    const after = derive(), mk = inc.fecha.slice(0, 7);
+    state.last = {cliente: inc.cliente, cop: Math.round(E.toCOP(inc.monto, inc.moneda, after.S.trm)), mes: mesLabel(mk), mesTotal: after.totals[mk],
+      salBefore: d.salaryAuto, salAfter: after.salaryAuto, taxBefore: Math.round(d.est.tax / 12), taxAfter: Math.round(after.est.tax / 12)};
+    state.flash = true;
+    render(); window.scrollTo(0, 0);
   };
+  const ap = $("#applySal"); if (ap) ap.onclick = () => { state.salaryOverride = +ap.dataset.sal; render(); window.scrollTo(0, 0); };
+  const us = $("#undoSal"); if (us) us.onclick = () => { state.salaryOverride = null; render(); };
   const fs = $("#fSet");
   if (fs) fs.onsubmit = (e) => { e.preventDefault();
     state.settings = {trm: +$("#s1").value || 1, retencionPct: +$("#s2").value || 0, fondoPct: +$("#s3").value || 0, fondoObjetivo: +$("#s4").value || 0, fondoActual: +$("#s5").value || 0, bolsaActual: +$("#s6").value || 0, arl: $("#s7").value === "1"};
